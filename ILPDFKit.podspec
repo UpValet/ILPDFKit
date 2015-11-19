@@ -15,5 +15,7 @@ s.source_files  = "ILPDFKit/**/*.{h,m}"
 s.frameworks = "QuartzCore", "UIKit"
 s.requires_arc = true
 s.documentation_url = 'http://ilpdfkit.com/index.html'
-
+s.dependency 'PPSSignatureView'
+s.resources = [ "ILPDFKit/SignatureView.xib" ]
+  
 end

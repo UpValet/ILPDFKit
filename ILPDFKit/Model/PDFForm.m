@@ -26,6 +26,7 @@
 #import "PDFFormChoiceField.h"
 #import "PDFFormSignatureField.h"
 #import "PDFFormContainer.h"
+#import "PPSSignatureView.h"
 
 @interface PDFForm(Delegates) <PDFWidgetAnnotationViewDelegate>
 @end
@@ -40,6 +41,8 @@
     NSUInteger _flags;
     NSUInteger _annotFlags;
     PDFWidgetAnnotationView *_formUIElement;
+    UIViewController *_signatureViewController;
+    PPSSignatureView *_signatureView;
 }
 
 #pragma mark - NSObject
@@ -245,6 +248,10 @@
         paragraphStyle.alignment = self.textAlignment;
         [text drawInRect:CGRectMake(0, 0, rect.size.width, rect.size.height*2.0) withAttributes:@{NSFontAttributeName:font,NSParagraphStyleAttributeName: paragraphStyle}];
         UIGraphicsPopContext();
+    } else if (self.formType == PDFFormTypeSignature && self.signatureImage) {
+        UIGraphicsPushContext(ctx);
+        [self.signatureImage drawInRect:CGRectMake(0, 0, rect.size.width, rect.size.height)];
+        UIGraphicsPopContext();
     } else if (self.formType == PDFFormTypeButton) {
         [PDFFormButtonField drawWithRect:rect context:ctx back:NO selected:[self.value isEqualToString:self.exportValue] && (_flags & PDFFormFlagButtonPushButton) == 0 radio:(_flags & PDFFormFlagButtonRadio) > 0];
     }
@@ -326,6 +333,9 @@
 #pragma mark - PDFWidgetAnnotationViewDelegate
 
 - (void)widgetAnnotationEntered:(PDFWidgetAnnotationView *)sender {
+    if (self.formType == PDFFormTypeSignature) {
+        [self showSignatureView:sender];
+    }
 }
 
 - (void)widgetAnnotationValueChanged:(PDFWidgetAnnotationView *)sender {
@@ -351,6 +361,48 @@
 
 - (void)widgetAnnotationOptionsChanged:(PDFWidgetAnnotationView *)sender {
     self.options = ((PDFWidgetAnnotationView *)sender).options;
+}
+
+#pragma mark - Signature
+
+- (void)showSignatureView:(PDFWidgetAnnotationView *)sender {
+    _signatureViewController = [[UIViewController alloc] init];
+    _signatureViewController.view.backgroundColor = [UIColor whiteColor];
+    
+    // PPSSignatureView only works when loaded from nib for some reason...
+    _signatureView = (PPSSignatureView *)[[NSBundle mainBundle] loadNibNamed:@"SignatureView" owner:self options:nil][0];
+    _signatureView.frame = _signatureViewController.view.frame;
+    
+    _signatureViewController.modalPresentationStyle = UIModalPresentationFormSheet;
+    _signatureViewController.preferredContentSize =  CGSizeMake(688, 250);
+    [_signatureViewController.view addSubview:_signatureView];
+    
+    UIButton *doneBtn = [[UIButton alloc] initWithFrame:CGRectMake(600, 0, 88, 44)];
+    [doneBtn setTitle:@"Done" forState:UIControlStateNormal];
+    [doneBtn setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
+    [doneBtn addTarget:self action:@selector(signatureDoneBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
+    [_signatureViewController.view addSubview:doneBtn];
+    
+    UIButton *cancelBtn = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 98, 44)];
+    [cancelBtn setTitle:@"Cancel" forState:UIControlStateNormal];
+    [cancelBtn setTitleColor:[UIColor darkTextColor] forState:UIControlStateNormal];
+    [cancelBtn addTarget:self action:@selector(signatureCancelBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
+    [_signatureViewController.view addSubview:cancelBtn];
+    
+    [sender.viewController presentViewController:_signatureViewController animated:YES completion:nil];
+}
+
+- (void)signatureDoneBtnPressed:(UIButton *)button {
+    self.signatureImage = [_signatureView signatureImage];
+    
+    PDFFormSignatureField *pdfFormSignatureField = (PDFFormSignatureField *)_formUIElement;
+    [pdfFormSignatureField.imageView setImage:self.signatureImage];
+    
+    [pdfFormSignatureField.viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)signatureCancelBtnPressed:(UIButton *)button {
+    [_formUIElement.viewController dismissViewControllerAnimated:YES completion:nil];
 }
 
 #pragma mark - Private

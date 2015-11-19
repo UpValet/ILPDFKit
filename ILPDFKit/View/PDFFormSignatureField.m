@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 #import "PDFFormSignatureField.h"
+#import "PDF.h"
 
 @implementation PDFFormSignatureField
 
@@ -30,9 +31,21 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [[UIColor redColor] colorWithAlphaComponent:0.1];
+        self.backgroundColor = PDFWidgetColor;
+        
+        self.imageView = [[UIImageView alloc] initWithFrame:self.bounds];
+        [self addSubview:self.imageView];
+        
+        UIButton *formBtn = [[UIButton alloc] initWithFrame:self.bounds];
+        [formBtn addTarget:self action:@selector(formBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:formBtn];
+        
     }
     return self;
+}
+
+- (void)formBtnPressed:(id)sender {
+    [self.delegate widgetAnnotationEntered:self];
 }
 
 

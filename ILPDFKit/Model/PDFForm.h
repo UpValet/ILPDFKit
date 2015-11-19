@@ -188,6 +188,11 @@ typedef NS_ENUM(NSUInteger, PDFFormType) {
  */
 @property (nonatomic, strong, readonly) PDFDictionary *dictionary;
 
+/**
+ The image of the user generated signature
+ */
+@property (nonatomic, strong) UIImage *signatureImage;
+
 /**---------------------------------------------------------------------------------------
  * @name Creating a PDFForm
  *  ---------------------------------------------------------------------------------------

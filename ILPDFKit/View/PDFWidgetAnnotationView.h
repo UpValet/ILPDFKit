@@ -107,4 +107,6 @@
  */
 - (void)resign;
 
+- (UIViewController *)viewController;
+
 @end

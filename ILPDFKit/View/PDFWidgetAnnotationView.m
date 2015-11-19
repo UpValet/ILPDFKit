@@ -48,6 +48,18 @@
     return self;
 }
 
+// Hack to get vc
+- (UIViewController *)viewController {
+    UIResponder *responder = self;
+    while (![responder isKindOfClass:[UIViewController class]]) {
+        responder = [responder nextResponder];
+        if (nil == responder) {
+            break;
+        }
+    }
+    return (UIViewController *)responder;
+}
+
 
 #pragma mark - PDFWidgetAnnotationView
 
